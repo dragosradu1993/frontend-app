@@ -4,9 +4,20 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import {BrowserRouter} from 'react-router-dom'
+import { GlobalStyles } from '@mui/styled-engine';
 
 ReactDOM.render(
   <BrowserRouter>
+    <GlobalStyles styles ={{
+        body:{
+          width: '100%',
+          height: '100%'
+        },
+        html:{
+          width: '100%',
+          height: '100%'
+        }
+    }}/>
     <App />
   </BrowserRouter>,
   document.getElementById('root')

@@ -1,5 +1,5 @@
 
-import { Divider, ListItem, ListItemButton, ListItemText, ListItemIcon, Skeleton, Box, Link } from '@mui/material';
+import { Divider, ListItem, ListItemButton, ListItemText, ListItemIcon, Skeleton, Box, List } from '@mui/material';
 import { Inbox, Email, Add, Dashboard, Folder, People, Group, Message, PersonAddAlt, School, AddComment, AccountBalance } from '@mui/icons-material';
 import * as React from 'react';
 import AppLogo from './AppLogo';
@@ -27,6 +27,8 @@ export default function AppMenu(props) {
         logoPath: '',
         menuItems: null
     })
+
+    const [selectedIndex, setSelectedIndex] = React.useState(0)
     
     const generateMenuIcon = (iconString) => {
         switch (iconString) {
@@ -58,24 +60,31 @@ export default function AppMenu(props) {
 
 
     React.useEffect(async () => {
-        const s = cookieData.get('s')
-        const menuBody = {
-            'id': getData.getIDFromToken(s)
-        } 
-        const respMenu = await axios.get(GET_MAIN_MENU_URL, {params: menuBody})
-    
-        if(respMenu.status === 200) {
-            setAppMenuData({
-                loading: false,
-                logoPath: props.logoPath,
-                menuItems: respMenu.data.menuList
-            })
+        async function fetchData() {
+            const s = cookieData.get('s')
+            const menuBody = {
+                'id': getData.getIDFromToken(s)
+            } 
+            const respMenu = await axios.get(GET_MAIN_MENU_URL, {
+                headers: {
+                "Authorization" : `Bearer ${s}`
+                }, 
+                params: menuBody})
+        
+            if(respMenu.status === 200) {
+                setAppMenuData(state => ({...state,
+                    loading: false,
+                    logoPath: props.logoPath,
+                    menuItems: respMenu.data.menuList
+                }))
+            }
         }
-    }, [setAppMenuData])
+        fetchData()
+    }, [props])
 
-    const handleClick = (e) => {
-        e.stopPropagation()
-        props.callback(e.target.firstChild.data)
+    const handleClick = (index) => {
+        setSelectedIndex(index)
+        props.callback(appMenuData.menuItems[index])
     }
 
     return (
@@ -95,17 +104,23 @@ export default function AppMenu(props) {
                 
             ):(
                 <div>
-                <AppLogo logoPath = {appMenuData.logoPath}/>
-                {appMenuData.menuItems.map((item, index) => (
-                        <ListItem key={item.title} disablePadding>
-                            <ListItemButton onClick={handleClick}>
-                                    <ListItemIcon>
-                                        {generateMenuIcon(item.icon)}
-                                    </ListItemIcon>
-                                    <ListItemText primary={item.title} />
+                    <AppLogo logoPath = {appMenuData.logoPath}/>
+                    <List component="nav" aria-label="main app menu">
+                        {appMenuData.menuItems.map((item, index) => (
+                            <ListItemButton 
+                                selected={selectedIndex === index}
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    handleClick(index)}}
+                                key = {item.redirect}
+                            >
+                                <ListItemIcon>
+                                    {generateMenuIcon(item.icon)}
+                                </ListItemIcon>
+                                <ListItemText primary={item.title} />
                             </ListItemButton>
-                        </ListItem>
-                ))}
+                        ))}
+                    </List>
                 </div>
             )}            
             <Divider/>

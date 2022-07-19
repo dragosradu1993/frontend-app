@@ -13,28 +13,34 @@ import {
   Button,
   Input,
   Snackbar,
-  Alert
+  Alert,
+  InputLabel,
+  NativeSelect,
+  FormControl,
+  Select,
+  MenuItem
 } from '@mui/material'
 import { styled } from '@mui/material/styles';
 import { 
   FileUpload,
   GroupAdd,
-  Add
+  Add,
+  Refresh
 } from '@mui/icons-material';
 import utils from '../../../../utils/utils'
-import DialogForm from './DialogForm';
+import DialogForm from '../recycled-components/DialogForm';
 import stringConstants from '../../../../utils/constants/stringConstants';
 
 
 
-export default function DataTable(props) {
+export default function GetBachelors(props) {
     const [loading, setLoading] = React.useState(true)
     const [dataRows, setDataRows] = React.useState([])
     const [gridAlert, setGridAlert] = React.useState({isError: false, severity: "error", textError: ""})
     const [gridDialog, setGridDialog] = React.useState()
     const [gridRows, setGridRows] = React.useState([])
     const [gridColumns, setGridColumns] = React.useState([])
-
+    let initial = true
     const [data, setData] = React.useState()
 
     const StyledGridOverlay = styled('div')(({ theme }) => ({
@@ -116,7 +122,6 @@ export default function DataTable(props) {
         //Check the validations
         if(type === 'accepted') {
           let ok = true
-          if(dialogData.location === 'add-one-student') {
             if(
               dialogData.dataToSend.hasOwnProperty('email') &&
               dialogData.dataToSend.hasOwnProperty('lastName') &&
@@ -150,7 +155,6 @@ export default function DataTable(props) {
               ok = false
               setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addStudents.noData})
             }
-          }
     
           if(ok) {
             setGridDialog({...gridDialog, open: false, dataToSend: {}})
@@ -189,6 +193,16 @@ export default function DataTable(props) {
           }
       }
 
+      if(button.action === 'refresh') {
+        const proj = await utils.user.projects.getApproved({
+          year: data.selectedYear,
+          facultyId: data.FacultyId,
+          type: 'LICENTA'
+        })
+        generateRows(proj.data)
+        console.log(gridRows)
+      }
+
     }
 
     const handleUploadExcel = (event) => {
@@ -210,67 +224,128 @@ export default function DataTable(props) {
           
       }
     }
+
+    const generateRows = (data) => {
+      let rows = [], row
+      for(let i = 0 ; i< data.length; i++) {
+        row={
+          id: i,
+          studentName: `${data[i].Student.Profile.lastName} ${data[i].Student.Profile.firstName}`,
+          projectName: data[i].name,
+          teacherName: `${data[i].Teacher.Profile.lastName} ${data[i].Teacher.Profile.firstName}`,
+          status: data[i].state
+        }
+
+        rows.push(row)
+      }
+
+      setGridRows([...rows])
+    }
     
     React.useEffect(() => {
       const getData = async (props) => {
         if(props.data.hasOwnProperty('page')) {
-          setGridRows([...props.data.dataGrid.settings.rows])
-          setGridColumns([...props.data.dataGrid.settings.columns])
-          let settings = {}
-          Object.keys(props.data.dataGrid.settings).forEach(function(key){
-            if (props.data.dataGrid.settings[key] !== 'rows' || props.data.dataGrid.settings[key] !== 'columns' ) {
-              settings[key] = props.data.dataGrid.settings[key] 
-            }
-          });
-            setData({
-              ...props.data,
-              page: props.data.page,
-              dataGrid: {
-                ...props.data.dataGrid,
-                isEditable: props.data.dataGrid.isEditable,
-                settings: settings,
-                selectedItems: []
+
+          if(initial) {
+            setGridRows([...props.data.dataGrid.settings.rows])
+            setGridColumns([...props.data.dataGrid.settings.columns])
+            let settings = {}
+            Object.keys(props.data.dataGrid.settings).forEach(function(key){
+              if (props.data.dataGrid.settings[key] !== 'rows' || props.data.dataGrid.settings[key] !== 'columns' ) {
+                settings[key] = props.data.dataGrid.settings[key] 
               }
-            })
+            });
+              setData({
+                ...props.data,
+                page: props.data.page,
+                dataGrid: {
+                  ...props.data.dataGrid,
+                  isEditable: props.data.dataGrid.isEditable,
+                  settings: settings,
+                  selectedItems: []
+                },
+                selectedYear:props.data.page.buttons[0].values[0]
+              })
+              initial = false
+          }
+
           setLoading(false)
         }
   
       }
 
       getData(props)
-    }, [])
+    }, [props])
 
     const generateIcon = (iconType) => {
-      switch(iconType) {
-        case 'file-upload':
-          return <FileUpload/>
-        case 'add':
-          return <Add/>
-        case 'group-add':
-          return <GroupAdd/>
-      }
+            return <Refresh/>
+    }
+
+    const generateOptions = (values) => {
+        let options = []
+        let option
+        for(let i=0;i<values.length;i++) {
+            option = (
+                <MenuItem value={values[i]}>{values[i]}</MenuItem>
+            )
+            options.push(option)
+        }
+        return options
+    }
+
+    const handleNativeSelect = async (e) => {
+        console.log(e)
+        const proj = await utils.user.projects.getApproved({
+          year: e.target.value,
+          facultyId: data.FacultyId,
+          type: 'LICENTA'
+        })
+        setData({...data, selectedYear: e.target.value})
+        generateRows(proj.data)
+        console.log(gridRows)
+
     }
 
     const generateButtons = (data) => {
       let contents = []
-      
+      console.log(data)
       for(let index=0; index<data.page.buttons.length; index++) {
         let content
           if(data.page.buttons[index].isUploadButton) {
-            content = (<label htmlFor="contained-button-file">
-              <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
-                <Button variant="text" disabled = {data.page.buttons[index].isDisabled} component="span">
-                  {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
-                </Button>
-            </label>)
-          } else {
             content = (
-              <Button variant='text' disabled = {data.page.buttons[index].isDisabled} component='span' onClick={(event) => {
-                event.preventDefault()
-                handleClick(event, index)}}>
-                {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
-              </Button>
-            )
+            <FormControl sx={{ m: 1, minWidth: 120 }}>
+                <label htmlFor="contained-button-file">
+                <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
+                    <Button variant="text" disabled = {data.page.buttons[index].isDisabled} component="span">
+                    {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+                    </Button>
+                </label>
+            </FormControl>
+)
+          } else {
+              if(data.page.buttons[index].hasOwnProperty('isSelectInput')) {
+                content = (
+                    <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+                        <InputLabel id={data.page.buttons[index].props.labelId} >
+                            {data.page.buttons[index].text}
+                        </InputLabel>
+                        <Select {...data.page.buttons[index].props} onChange = {handleNativeSelect}>
+                            {generateOptions(data.page.buttons[index].values)}
+                        </Select>
+                    </FormControl>
+                  )
+              } else {
+                content = (
+                    <FormControl sx={{ m: 1, minWidth: 120 }}>
+                        <Button sx= {{p:'1%', pt:2}} variant='text' disabled = {data.page.buttons[index].isDisabled} component='span' onClick={(event) => {
+                        event.preventDefault()
+                        handleClick(event, index)}}>
+                        {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+                        </Button>
+                    </FormControl>
+                  )
+              }
+
           }
         contents.push(content)
       }
@@ -304,7 +379,10 @@ export default function DataTable(props) {
                 {data.page.title}
               </Typography>
             </Box>
-            {generateButtons(data)}
+            <div>
+                {generateButtons(data)}
+            </div>
+            
 
               <div style={{ display: 'flex', height:'80vh'}}>
                 <div style={{ flexGrow: 1 }}>

@@ -76,9 +76,9 @@ export default function SetupBox() {
         console.log(activeStep, steps.length)
         if(activeStep === steps.length - 1) {
             const jsonData = setupUtil.createSetupJSON(jsonDataToSend)
-            axios.post('http://localhost:3001/api-dev/app-info/add', jsonData.app)
+            axios.post('https://localhost:3001/api-dev/app-info/add', jsonData.app)
             .then(res => { // then print response status
-                axios.post('http://localhost:3001/api-dev/users/register', jsonData.account)
+                axios.post('https://localhost:3001/api-dev/users/register', jsonData.account)
                 .then(res => {
                     navigate('/login')
                 })

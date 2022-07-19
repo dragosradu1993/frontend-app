@@ -1,9 +1,13 @@
 {
-  "name": "gestiune-licenta",
-  "proxy": "http://192.168.68.56:8080",
+  "name": "frontend-licenta",
   "version": "0.1.0",
+  "description": "Licenta Aplicatie de gestiune a lucrarilor de licenta si disertatie FrontEnd",
   "private": true,
+  "author": "Radu Dragos-Andrei",
   "dependencies": {
+    "@devexpress/dx-react-chart": "^3.0.3",
+    "@devexpress/dx-react-chart-material-ui": "^3.0.3",
+    "@devexpress/dx-react-core": "^3.0.3",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
     "@mui/icons-material": "^5.8.0",
@@ -22,7 +26,7 @@
     "react-bootstrap": "^1.6.1",
     "react-dom": "^17.0.2",
     "react-router-dom": "^6.3.0",
-    "react-scripts": "^2.1.3",
+    "react-scripts": "^5.0.1",
     "react-spinners": "^0.11.0",
     "save-dev": "^0.0.1-security",
     "string-to-react": "^1.0.2",
@@ -37,7 +41,7 @@
     "start-prod": "env-cmd -f ./environments/.prod.env react-scripts start",
     "build-dev": "env-cmd -f ./environments/.dev.env react-scripts build",
     "build-test": "env-cmd -f ./environments/.test.env react-scripts build",
-    "build-prod": "eenv-cmd -f ./environments/.prod.env react-scripts build",
+    "build-prod": "env-cmd -f ./environments/.prod.env react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

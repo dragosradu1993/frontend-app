@@ -1,304 +1,352 @@
 import * as React from 'react'
-import { Typography, Box, Input, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Divider, Autocomplete, TextField, Snackbar, Alert } from '@mui/material'
-import FileUpload from '@mui/icons-material/FileUpload'
-import DataTable from '../recycled-components/DataTable'
-import Cookies from 'universal-cookie'
-import hostURL from '../../../../utils/constants/hostURL'
-import * as API_URL from '../../../../utils/constants/urlConstants'
-import axios from 'axios'
-import { Add, GroupAdd } from '@mui/icons-material'
-import setupUtil from '../../../../Setup/utils/setupUtil'
-import XLSX from 'xlsx'
-import * as DATATABLE from '../../../../utils/constants/tableConstants'
-import utils from './utils/utils'
+import {
+  DataGrid,
+  GridToolbar,
+  useGridApiRef,
+} from '@mui/x-data-grid'
+import { 
+  Box,
+  LinearProgress,
+  Backdrop,
+  CircularProgress,
+  Typography,
+  Button,
+  Input,
+  Snackbar,
+  Alert
+} from '@mui/material'
+import { styled } from '@mui/material/styles';
+import { 
+  FileUpload,
+  GroupAdd,
+  Add
+} from '@mui/icons-material';
+import utils from '../../../../utils/utils'
+import DialogForm from '../recycled-components/DialogForm';
+import stringConstants from '../../../../utils/constants/stringConstants';
 
 
-let jsonUserData = {
-    id: 0,
-    email : "",
-    password: "",
-    roleName: "",
-    firstName: "",
-    lastName: "",
-    phoneNumber: ""
-}
-
-let rows = []
 
 export default function AddUsers(props) {
-    const [isRender, setIsRender] = React.useState(true)
-    const [allUsers, setAllUsers] = React.useState({columns: DATATABLE.ADD_USERS_TABLE_COLUMNS, rows: rows})
-    const [selectedUsers, setSelectedUsers] = React.useState()
-    const [isAddedFile, setIsAddedFile] = React.useState(false)
-    const [openDialog, setOpenDialog] = React.useState(false)
-    const [dataForSend, setDataForSend] = React.useState()
-    const [rowData, setRowData] = React.useState([])
-    const [addUserAlert, setAddUserAlert] = React.useState({open: false, severity: "success", text: ''})
+    const [loading, setLoading] = React.useState(true)
+    const [dataRows, setDataRows] = React.useState([])
+    const [gridAlert, setGridAlert] = React.useState({isError: false, severity: "error", textError: ""})
+    const [gridDialog, setGridDialog] = React.useState()
+    const [gridRows, setGridRows] = React.useState([])
+    const [gridColumns, setGridColumns] = React.useState([])
 
-    //For validation fields
-    const [isFirstNameInvalid, setIsFirstNameInvalid] = React.useState({state: false, text: ""})
-    const [isLasttNameInvalid, setIsLastNameInvalid] = React.useState({state: false, text: ""})
-    const [isEmailInvalid, setIsEmailInvalid] = React.useState({state: false, text: ""})
-    const [isPasswordInvalid, setIsPasswordInvalid] = React.useState({state: false, text: ""})
-    const [isPhoneInvalid, setIsPhoneInvalid] = React.useState({state: false, text: ""})
+    const [data, setData] = React.useState()
 
-    const userRoles = [
-        { title: 'Administrator', roleName: 'ADMIN' },
-        { title: 'Secretariat', roleName: 'SECRETARY' },
-        { title: 'Student', roleName: 'STUDENT' },
-        { title: 'Profesor', roleName: 'TEACHER'}
-    ]
+    const StyledGridOverlay = styled('div')(({ theme }) => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        '& .ant-empty-img-1': {
+          fill: theme.palette.mode === 'light' ? '#aeb8c2' : '#262626',
+        },
+        '& .ant-empty-img-2': {
+          fill: theme.palette.mode === 'light' ? '#f5f5f7' : '#595959',
+        },
+        '& .ant-empty-img-3': {
+          fill: theme.palette.mode === 'light' ? '#dce0e6' : '#434343',
+        },
+        '& .ant-empty-img-4': {
+          fill: theme.palette.mode === 'light' ? '#fff' : '#1c1c1c',
+        },
+        '& .ant-empty-img-5': {
+          fillOpacity: theme.palette.mode === 'light' ? '0.8' : '0.08',
+          fill: theme.palette.mode === 'light' ? '#f5f5f5' : '#fff',
+        },
+      }));
+      
+      function NoDataOverlay() {
+        return (
+          <StyledGridOverlay>
+            <svg
+              width="120"
+              height="100"
+              viewBox="0 0 184 152"
+              aria-hidden
+              focusable="false"
+            >
+              <g fill="none" fillRule="evenodd">
+                <g transform="translate(24 31.67)">
+                  <ellipse
+                    className="ant-empty-img-5"
+                    cx="67.797"
+                    cy="106.89"
+                    rx="67.797"
+                    ry="12.668"
+                  />
+                  <path
+                    className="ant-empty-img-1"
+                    d="M122.034 69.674L98.109 40.229c-1.148-1.386-2.826-2.225-4.593-2.225h-51.44c-1.766 0-3.444.839-4.592 2.225L13.56 69.674v15.383h108.475V69.674z"
+                  />
+                  <path
+                    className="ant-empty-img-2"
+                    d="M33.83 0h67.933a4 4 0 0 1 4 4v93.344a4 4 0 0 1-4 4H33.83a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4z"
+                  />
+                  <path
+                    className="ant-empty-img-3"
+                    d="M42.678 9.953h50.237a2 2 0 0 1 2 2V36.91a2 2 0 0 1-2 2H42.678a2 2 0 0 1-2-2V11.953a2 2 0 0 1 2-2zM42.94 49.767h49.713a2.262 2.262 0 1 1 0 4.524H42.94a2.262 2.262 0 0 1 0-4.524zM42.94 61.53h49.713a2.262 2.262 0 1 1 0 4.525H42.94a2.262 2.262 0 0 1 0-4.525zM121.813 105.032c-.775 3.071-3.497 5.36-6.735 5.36H20.515c-3.238 0-5.96-2.29-6.734-5.36a7.309 7.309 0 0 1-.222-1.79V69.675h26.318c2.907 0 5.25 2.448 5.25 5.42v.04c0 2.971 2.37 5.37 5.277 5.37h34.785c2.907 0 5.277-2.421 5.277-5.393V75.1c0-2.972 2.343-5.426 5.25-5.426h26.318v33.569c0 .617-.077 1.216-.221 1.789z"
+                  />
+                </g>
+                <path
+                  className="ant-empty-img-3"
+                  d="M149.121 33.292l-6.83 2.65a1 1 0 0 1-1.317-1.23l1.937-6.207c-2.589-2.944-4.109-6.534-4.109-10.408C138.802 8.102 148.92 0 161.402 0 173.881 0 184 8.102 184 18.097c0 9.995-10.118 18.097-22.599 18.097-4.528 0-8.744-1.066-12.28-2.902z"
+                />
+                <g className="ant-empty-img-4" transform="translate(149.65 15.383)">
+                  <ellipse cx="20.654" cy="3.167" rx="2.849" ry="2.815" />
+                  <path d="M5.698 5.63H0L2.898.704zM9.259.704h4.985V5.63H9.259z" />
+                </g>
+              </g>
+            </svg>
+            <Box sx={{ mt: 1 }}>Nu exista date</Box>
+          </StyledGridOverlay>
+        );
+      }
 
-    const defaultProps = {
-        options: userRoles,
-        getOptionLabel: (option) => option.title
-    }
-
-
-
-    const cookies = new Cookies()
-    const TOKEN = cookies.get('s')
-    const ID = cookies.get('id')
-    const BASE_URL = hostURL()
-    const GET_DATA_URL = BASE_URL + API_URL.API_GET_ALL_USERS_CONTENT
-
-   React.useEffect(() => {
-        if(isRender) {
-            setAllUsers({columns: DATATABLE.ADD_USERS_TABLE_COLUMNS, rows: rowData})
+      const callbackGridDialog = async (type, dialogData) => {
+        console.log(dialogData, type)
+        if(type === 'close') {
+          setGridDialog({...gridDialog, open: false, dataToSend: {}})
         }
-        return () => {
-            setIsRender(false)
-        }
-    }, [allUsers])
+        //Check the validations
+        if(type === 'accepted') {
+          let ok = true
+            if(
+              dialogData.dataToSend.hasOwnProperty('email') &&
+              dialogData.dataToSend.hasOwnProperty('password') &&
+              dialogData.dataToSend.hasOwnProperty('firstName') &&
+              dialogData.dataToSend.hasOwnProperty('lastName') &&
+              dialogData.dataToSend.hasOwnProperty('phoneNumber') &&
+              dialogData.dataToSend.hasOwnProperty('roleName')
+            ) {
+              if(utils.validations.email(dialogData.dataToSend.email)) {
+                  if(utils.validations.password(dialogData.dataToSend.password)) {
+                    if(
+                    !utils.validations.validateStringLength(dialogData.dataToSend.lastName) &&
+                    !utils.validations.validateStringLength(dialogData.dataToSend.firstName) 
+                    ) {
 
-    const callback = (data) => {
-        setSelectedUsers(data)
-    }
-
-    const handleRefreshClick = (e) => {
-        setIsRender(true)
-        axios.get(GET_DATA_URL, {headers: {"Authorization" : `Bearer ${TOKEN}`}, params: { id: ID}})
-        .then((res) => {
-            setAllUsers(res.data)
-            setIsRender(false)
-        })
-        .catch((res) => {
-            setAllUsers(res.data)
-            setIsRender(false)
-        })
-    }
-
-    const handleClickOpenAddUser = (e) => {
-        e.preventDefault()
-        setOpenDialog(true)
-    }
-
-    const handleClickCloseAddUser = (e) => {
-        e.preventDefault()
-        setOpenDialog(false)
-    }
-
-    const handleManualAddClick = (e) => {
-        e.preventDefault()
-        if(isRender) rows = []
-        
-        jsonUserData.id = rows.length+1
-        const newRow = JSON.parse(JSON.stringify(jsonUserData))
-        rows = [...rows, newRow]
-        setAllUsers({columns: DATATABLE.ADD_USERS_TABLE_COLUMNS, rows: rows})
-        setOpenDialog(false)   
-    }
-
-    const handleUploadExcel = (e) => {
-        e.preventDefault()
-        if(isRender) rows = []
-        if(e.target.files) {
-            const reader = new FileReader()
-            reader.onload = (e) => {
-                let tempJson = utils.xlsxToJSON(e)     
-                for(let i=0;i<tempJson.length; i++){   
-                    let tempUserData = { id: 0, email : "", password: "", roleName: "", firstName: "", lastName: "", phoneNumber: "" }                                    
-                    for(const key in tempJson[i]) {
-                        tempUserData[key] = tempJson[i][key]
+                        let row = {id: gridRows.length+1, ...dialogData.dataToSend}
+                        setGridRows([...gridRows, row])
+                    } else {
+                        ok = false
+                        setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addStudents.nameLength})
                     }
-                    tempUserData.id = rows.length+1
-                    const newRow = JSON.parse(JSON.stringify(tempUserData))
-                    rows = [...rows, newRow]
-                }
-                setAllUsers({columns: DATATABLE.ADD_USERS_TABLE_COLUMNS, rows: rows})
+                } else {
+                    ok = false
+                    setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.password})
+                }  
+              } else {
+                ok = false
+                setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.email})            
+              }
+            }  else {
+              ok = false
+              setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addStudents.noData})
             }
-            reader.readAsArrayBuffer(e.target.files[0])
+    
+          if(ok) {
+            setGridDialog({...gridDialog, open: false, dataToSend: {}})
+          }
         }
+      }
+
+
+    const handleClick = async (event, index) => {
+      event.preventDefault()
+      console.log(index)
+      const button = data.page.buttons[index]
+
+      if(button.action === 'dialog') {
+        const dialogData = await utils.app.getDialogData(button.type)
+        setGridDialog(dialogData.data)
+      }
+     console.log(button)
+      if(button.type === 'register-users')  {
+          if(gridRows.length > 0) {
+            let dataToSubmit = []
+              gridRows.forEach(element => {
+                dataToSubmit.push({
+                    email: element.email,
+                    password: element.password,
+                    roleName: element.roleName,
+                    profile: {
+                        firstName: element.firstName,
+                        lastName: element.lastName,
+                        phoneNumber: element.phoneNumber
+                    }
+                })
+              });
+
+            console.log(dataToSubmit)
+            const sendData = await utils.app.sendDataByType(button.type, dataToSubmit)
+            if(!sendData.status) {
+              setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addData.notAdd})    
+            } else {
+              setGridAlert({isError: true, severity: 'success', textError: stringConstants.error.secretaries.addData.successAll}) 
+              setGridRows([])
+            } 
+            
+          }
+      }
+
     }
 
-    const handleClickRegisterUsers = (e) => {
-        let pendingDelete = []
-        rows.forEach((item,i) => {
-            const userBody = {
-                email: item.email,
-                password: item.password,
-                roleName: item.roleName,
-                profile: {
-                    firstName: item.firstName,
-                    lastName: item.lastName,
-                    phoneNumber: item.phoneNumber
-                }
+    const handleUploadExcel = (event) => {
+      event.preventDefault()
+      if(event.target.files) {
+          const reader = new FileReader()
+          let tempRows = []
+          reader.onload = (e) => {
+              let excelData = utils.app.xlsxToJSON(e)
+              let numberOfRows = data.dataGrid.settings.rows.length
+              
+              for(let i = 0; i < excelData.length; i++) {
+                tempRows.push({id:numberOfRows+1, ...excelData[i]})
+                numberOfRows++
+              }
+              setGridRows([...gridRows, ...tempRows])
+          }
+          reader.readAsArrayBuffer(event.target.files[0])
+          
+      }
+    }
+    
+    React.useEffect(() => {
+      const getData = async (props) => {
+        if(props.data.hasOwnProperty('page')) {
+          setGridRows([...props.data.dataGrid.settings.rows])
+          setGridColumns([...props.data.dataGrid.settings.columns])
+          let settings = {}
+          Object.keys(props.data.dataGrid.settings).forEach(function(key){
+            if (props.data.dataGrid.settings[key] !== 'rows' || props.data.dataGrid.settings[key] !== 'columns' ) {
+              settings[key] = props.data.dataGrid.settings[key] 
             }
-            axios.post('http://localhost:3001/api-dev/users/register', userBody)
-            .then((results) => {
-                console.log(pendingDelete)
-                pendingDelete = [...pendingDelete, i]
-                
+          });
+            setData({
+              ...props.data,
+              page: props.data.page,
+              dataGrid: {
+                ...props.data.dataGrid,
+                isEditable: props.data.dataGrid.isEditable,
+                settings: settings,
+                selectedItems: []
+              }
             })
-            .catch((message) => {
-                console.log(message)
-            })
-        })
-        let tempRows = []
-        console.log(pendingDelete)
-        for(let j=0;j<pendingDelete.length;j++) {
-            rows.forEach((item, i) => {
-                if(!(i===pendingDelete[j])) {
-                    tempRows = [...tempRows,item]
-                }
-            })
+          setLoading(false)
         }
-        if(tempRows.length > 0) {
-            rows = [...tempRows]
-        }
-        if(rows.length === 0){
-            setAddUserAlert({open:true, severity: 'success', text: 'Utilizatorii au fost inregistrati cu succes'})
-        } else {
-            setAddUserAlert({open:true, severity: 'error', text: 'Nu toti utilizatorii au fost inregistrati!'})
-        }
-        setAllUsers({columns: DATATABLE.ADD_USERS_TABLE_COLUMNS, rows: rows})
+  
+      }
+
+      getData(props)
+    }, [props])
+
+    const generateIcon = (iconType) => {
+      switch(iconType) {
+        case 'file-upload':
+          return <FileUpload/>
+        case 'add':
+          return <Add/>
+        case 'group-add':
+          return <GroupAdd/>
+      }
     }
 
-    const handleCloseSnackbar = (e) => {
-        setAddUserAlert({open: false, severity: "success", text: ''})
+    const generateButtons = (data) => {
+      let contents = []
+      
+      for(let index=0; index<data.page.buttons.length; index++) {
+        let content
+          if(data.page.buttons[index].isUploadButton) {
+            content = (<label key = {`button-${index}`} htmlFor="contained-button-file">
+              <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
+                <Button variant="text" disabled = {data.page.buttons[index].isDisabled} component="span">
+                  {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+                </Button>
+            </label>)
+          } else {
+            content = (
+              <Button key = {`button-${index}`} variant='text' disabled = {data.page.buttons[index].isDisabled} component='span' onClick={(event) => {
+                event.preventDefault()
+                handleClick(event, index)}}>
+                {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+              </Button>
+            )
+          }
+        contents.push(content)
+      }
+
+      return (
+        <Box sx = {{pb:'1%', pt:'1%'}}>
+          {contents}
+        </Box>
+      )
     }
 
-    const textFieldHandler = (e) => {
-        switch (e.target.labels[0].firstChild.data)
-        {
-            case "Parola":
-                if(setupUtil.validatePassword(e.target.value)) {
-                    setIsPasswordInvalid({state: false, text: ""})
-                    jsonUserData.password = e.target.value
-                } else {
-                    setIsPasswordInvalid({state: true, text: "Parola trebuie sa contina minim 8 caractere impreuna cu urmatorul set de caractere: litera mare, litera mica, caracter special"})
-                }
-                break
-            case "Nume":
-                if(setupUtil.validateName(e.target.value)){
-                    setIsLastNameInvalid({state: false, text: ""})
-                    jsonUserData.lastName = e.target.value
-                } else {
-                    setIsLastNameInvalid({state: true, text: "Numele de familie trebuie sa contina minimum 3 caractere"})
-                }
-                break
-            case "Prenume":
-                if(setupUtil.validateFirstName(e.target.value)){
-                    setIsFirstNameInvalid({state: false, text: ""})
-                    jsonUserData.firstName = e.target.value
-                } else {
-                    setIsLastNameInvalid({state: true, text: "Prenumele trebuie sa contina minimum 3 caractere"})
-                }
-                break
-            case "Telefon":
-                if(setupUtil.validatePhoneNumber(e.target.value)) {
-                    setIsPhoneInvalid({state: false, text: ""})
-                    jsonUserData.phoneNumber = e.target.value
-                } else {
-                    setIsPhoneInvalid({state: true, text: "Numarul de telefon introdus este invalid"})
-                }
-                break
-            default:
-                if(setupUtil.validateEmail(e.target.value)) {
-                    setIsEmailInvalid({state: false, text: ""})
-                    jsonUserData.email = e.target.value
-                } else {
-                    setIsEmailInvalid({state: true, text: "Email-ul este invalid"})
-                }
-                break
-        }
-    }
-
+    const handleCloseGridAlert = (event, reason) => {
+      if (reason === 'clickaway') {
+        return;
+      }
+  
+      setGridAlert(previous => ({...previous, isError: false, textError: ""}))
+  }
 
 
     return (
-        <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={2} style={{height: '100%'}}>
-            <Box gridColumn="span 12">
-                <Typography variant='h4'>
-                    Adaugare utilizator
-                </Typography>
+      loading ? (
+        <Backdrop open={loading} sx={{position:'absolute', zIndex:1, alignItems:'center'}}>
+          <CircularProgress sx={{color:'white'}} />
+        </Backdrop>
+      ) : (
+        <Box sx={{p : 3, height: '100vh'}}>
+          <Box>
+            <Box>
+              <Typography variant = 'h4'>
+                {data.page.title}
+              </Typography>
             </Box>
-            <Box gridColumn="span 12" minHeight={500} >
-                <label htmlFor="contained-button-file">
-                    <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
-                    <Button variant="text" style={isAddedFile === false ? {display: 'inline-flex'} : {display: 'none'}} component="span">
-                        <FileUpload />
-                        Incarca fisier Excel
-                    </Button>
-                </label>
-                <Button variant="text" onClick={handleClickOpenAddUser}>
-                    <Add/>
-                    Adauga un nou utilizator
-                </Button> 
-                <Button variant="text" onClick={handleClickRegisterUsers}>
-                    <GroupAdd/>
-                    Inregistreaza utilizatorii
-                </Button>
-                <div style={{ display: 'flex', height: '100%'}}>
-                    <div style={{ flexGrow: 1 }}>
-                        <DataTable data = {allUsers} isSelectable = {false} callback={callback}/>
-                    </div>
-                </div>
-            </Box>
-            
-            <Dialog open={openDialog} onClose={handleClickCloseAddUser}>
-                <DialogTitle>
-                    Adauga un nou utilizator
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Pentru a adauga un nou utilizator este important ca toate datele sa fie completate
-                    </DialogContentText>
-                    <Divider sx={{mt:1, mb:1}}/>
-                    <DialogContentText sx={{mt:1, mb: 1, color: '#1976d2'}}>
-                        Date utilizator
-                    </DialogContentText>
-                    <TextField error = {isEmailInvalid.state} helperText = {isEmailInvalid.text} fullWidth required variant='standard' id="outlined-required1" label="Email" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isPasswordInvalid.state} helperText = {isPasswordInvalid.text} fullWidth variant='standard' id="outlined-password-input" label="Parola" type="password" autoComplete="current-password" margin="normal" onChange={textFieldHandler}/>
-                    <Autocomplete
-                        onChange={(event,value) => jsonUserData.roleName = value.roleName}
-                        {...defaultProps}
-                        id="auto-complete"
-                        autoComplete
-                        includeInputInList
-                        renderInput={(params) => (
-                            <TextField {...params} label="Rol utilizator" variant="standard" />
-                        )}
-                    />
-                    <Divider sx={{m:1, mb:1}}/>
-                    <DialogContentText  sx={{color: '#1976d2'}}>
-                        Date profil utilizator
-                    </DialogContentText>
-                    <TextField error = {isLasttNameInvalid.state} helperText = {isLasttNameInvalid.text} fullWidth variant='standard' required id="outlined-required2" label="Nume" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isFirstNameInvalid.state} helperText = {isFirstNameInvalid.text} fullWidth variant='standard' required id="outlined-required3" label="Prenume" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isPhoneInvalid.state} helperText = {isPhoneInvalid.text} fullWidth variant='standard' required id="outlined-required4" label="Telefon" margin="normal" onChange={textFieldHandler}/>
-                </DialogContent>
-                <DialogActions>
-                    <Button variant = "text" onClick={handleClickCloseAddUser}>Anuleaza</Button>
-                    <Button variant = "text" onClick={handleManualAddClick.bind(this)}>Adauga</Button> 
-                </DialogActions>
-            </Dialog>
+            {generateButtons(data)}
 
-            <Snackbar open={addUserAlert.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-                    <Alert onClose={handleCloseSnackbar} severity={addUserAlert.severity} sx={{ width: '100%' }}>
-                        {addUserAlert.text}
-                    </Alert>
-            </Snackbar>
+              <div style={{ display: 'flex', height:'80vh'}}>
+                <div style={{ flexGrow: 1 }}>
+                  {data.dataGrid.settings.show ? (
+                    <DataGrid
+                      experimentalFeatures={{ newEditingApi: true }}
+                      {...data.dataGrid.settings}
+                      components = {{
+                        Toolbar: GridToolbar,
+                        LoadingOverlay: LinearProgress,
+                        NoRowsOverlay: NoDataOverlay 
+                      }}
+                      rows = {gridRows}
+                      columns = {gridColumns}
+                      onSelectionModelChange={(ids) => {
+                          const selectedIDs = new Set(ids)
+                          const selectedRowData = dataRows.filter((row) => selectedIDs.has(row.id))
+                          if(!(selectedRowData === undefined) || (selectedRowData.length > 0)) {
+                              console.log(selectedRowData)
+                          }
+                      }}
+                      selectionModel = {data.dataGrid.selectedItems}
+                    />
+                  ) : (
+                    <Box></Box>
+                  )}
+                </div>
+              </div>
+          </Box>
+          <DialogForm data = {gridDialog} callback = {callbackGridDialog} />
+          <Snackbar open={gridAlert.isError} autoHideDuration={6000} onClose={handleCloseGridAlert}>
+            <Alert onClose={handleCloseGridAlert} severity={gridAlert.severity} sx={{ width: '100%' }}>
+              {gridAlert.textError}
+            </Alert>
+          </Snackbar>
         </Box>
+      )     
     )
 }

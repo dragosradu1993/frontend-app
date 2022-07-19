@@ -1,4 +1,4 @@
-const USERMENU = ['Profil', 'Logout']
+const USERMENU = ['Profil', 'Deconectare']
 
 const stringToColor = function (string) {
     let hash = 0;

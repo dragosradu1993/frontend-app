@@ -22,12 +22,12 @@ import {
   Add
 } from '@mui/icons-material';
 import utils from '../../../../utils/utils'
-import DialogForm from './DialogForm';
+import DialogForm from '../recycled-components/DialogForm';
 import stringConstants from '../../../../utils/constants/stringConstants';
 
 
 
-export default function DataTable(props) {
+export default function AddStudents(props) {
     const [loading, setLoading] = React.useState(true)
     const [dataRows, setDataRows] = React.useState([])
     const [gridAlert, setGridAlert] = React.useState({isError: false, severity: "error", textError: ""})
@@ -116,7 +116,6 @@ export default function DataTable(props) {
         //Check the validations
         if(type === 'accepted') {
           let ok = true
-          if(dialogData.location === 'add-one-student') {
             if(
               dialogData.dataToSend.hasOwnProperty('email') &&
               dialogData.dataToSend.hasOwnProperty('lastName') &&
@@ -150,7 +149,6 @@ export default function DataTable(props) {
               ok = false
               setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addStudents.noData})
             }
-          }
     
           if(ok) {
             setGridDialog({...gridDialog, open: false, dataToSend: {}})
@@ -169,15 +167,13 @@ export default function DataTable(props) {
         setGridDialog(dialogData.data)
       }
      
-      if(button.action === 'submit') {
+      if(button.type === 'register-students')  {
           if(gridRows.length > 0) {
-            let dataToSubmit
-            if(button.type === 'register-students') {
-              dataToSubmit = []
+            let dataToSubmit = []
               gridRows.forEach(element => {
-                dataToSubmit.push({...element, facultyId: data.facultyId, PromotionId: data.promotionId})
+                dataToSubmit.push({...element, FacultyId: data.facultyId, PromotionId: data.promotionId})
               });
-            }
+
             console.log(data)
             const sendData = await utils.app.sendDataByType(button.type, dataToSubmit)
             if(!sendData.status) {
@@ -238,7 +234,7 @@ export default function DataTable(props) {
       }
 
       getData(props)
-    }, [])
+    }, [props])
 
     const generateIcon = (iconType) => {
       switch(iconType) {

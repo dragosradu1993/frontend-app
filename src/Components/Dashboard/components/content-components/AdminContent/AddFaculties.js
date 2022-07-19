@@ -1,275 +1,347 @@
 import * as React from 'react'
-import { Typography, Box, Input, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Divider, Autocomplete, TextField, Snackbar, Alert } from '@mui/material'
-import FileUpload from '@mui/icons-material/FileUpload'
-import DataTable from '../recycled-components/DataTable'
-import Cookies from 'universal-cookie'
-import hostURL from '../../../../utils/constants/hostURL'
-import * as API_URL from '../../../../utils/constants/urlConstants'
-import axios from 'axios'
-import { Add, GroupAdd } from '@mui/icons-material'
-import setupUtil from '../../../../Setup/utils/setupUtil'
-import XLSX from 'xlsx'
-import * as DATATABLE from '../../../../utils/constants/tableConstants'
-import utils from './utils/utils'
+import {
+  DataGrid,
+  GridToolbar,
+  useGridApiRef,
+} from '@mui/x-data-grid'
+import { 
+  Box,
+  LinearProgress,
+  Backdrop,
+  CircularProgress,
+  Typography,
+  Button,
+  Input,
+  Snackbar,
+  Alert
+} from '@mui/material'
+import { styled } from '@mui/material/styles';
+import { 
+  FileUpload,
+  GroupAdd,
+  Add,
+  AddBusiness
+} from '@mui/icons-material';
+import utils from '../../../../utils/utils'
+import DialogForm from '../recycled-components/DialogForm';
+import stringConstants from '../../../../utils/constants/stringConstants';
 
 
-let jsonFacultyData = {
-    id: 0,
-    name: "",
-    address: "",
-    phoneNumber: "",
-    shortName: ""
-}
-
-let rows = []
 
 export default function AddFaculties(props) {
-    const [isRender, setIsRender] = React.useState(true)
-    const [allFaculties, setAllFaculties] = React.useState({columns: DATATABLE.ADD_FACULTIES_TABLE_COLUMNS, rows: rows})
-    const [selectedFaculties, setSelectedFaculties] = React.useState()
-    const [isAddedFile, setIsAddedFile] = React.useState(false)
-    const [openDialog, setOpenDialog] = React.useState(false)
-    const [rowData, setRowData] = React.useState([])
-    const [addFacultyAlert, setAddFacultyAlert] = React.useState({open: false, severity: "success", text: ''})
+    const [loading, setLoading] = React.useState(true)
+    const [dataRows, setDataRows] = React.useState([])
+    const [gridAlert, setGridAlert] = React.useState({isError: false, severity: "error", textError: ""})
+    const [gridDialog, setGridDialog] = React.useState()
+    const [gridRows, setGridRows] = React.useState([])
+    const [gridColumns, setGridColumns] = React.useState([])
 
-    //For validation fields
-    const [isNameInvalid, setIsNameInvalid] = React.useState({state: false, text: ""})
-    const [isAddressInvalid, setIsAddressInvalid] = React.useState({state: false, text: ""})
-    const [isPhoneInvalid, setIsPhoneInvalid] = React.useState({state: false, text: ""})
-    const [isShortNameInvalid, setIsShortNameInvalid] = React.useState({state: false, text: ""})
+    const [data, setData] = React.useState()
 
-    const userRoles = [
-        { title: 'Administrator', roleName: 'ADMIN' },
-        { title: 'Secretariat', roleName: 'SECRETARY' },
-        { title: 'Student', roleName: 'STUDENT' },
-        { title: 'Profesor', roleName: 'TEACHER'}
-    ]
+    const StyledGridOverlay = styled('div')(({ theme }) => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        '& .ant-empty-img-1': {
+          fill: theme.palette.mode === 'light' ? '#aeb8c2' : '#262626',
+        },
+        '& .ant-empty-img-2': {
+          fill: theme.palette.mode === 'light' ? '#f5f5f7' : '#595959',
+        },
+        '& .ant-empty-img-3': {
+          fill: theme.palette.mode === 'light' ? '#dce0e6' : '#434343',
+        },
+        '& .ant-empty-img-4': {
+          fill: theme.palette.mode === 'light' ? '#fff' : '#1c1c1c',
+        },
+        '& .ant-empty-img-5': {
+          fillOpacity: theme.palette.mode === 'light' ? '0.8' : '0.08',
+          fill: theme.palette.mode === 'light' ? '#f5f5f5' : '#fff',
+        },
+      }));
+      
+      function NoDataOverlay() {
+        return (
+          <StyledGridOverlay>
+            <svg
+              width="120"
+              height="100"
+              viewBox="0 0 184 152"
+              aria-hidden
+              focusable="false"
+            >
+              <g fill="none" fillRule="evenodd">
+                <g transform="translate(24 31.67)">
+                  <ellipse
+                    className="ant-empty-img-5"
+                    cx="67.797"
+                    cy="106.89"
+                    rx="67.797"
+                    ry="12.668"
+                  />
+                  <path
+                    className="ant-empty-img-1"
+                    d="M122.034 69.674L98.109 40.229c-1.148-1.386-2.826-2.225-4.593-2.225h-51.44c-1.766 0-3.444.839-4.592 2.225L13.56 69.674v15.383h108.475V69.674z"
+                  />
+                  <path
+                    className="ant-empty-img-2"
+                    d="M33.83 0h67.933a4 4 0 0 1 4 4v93.344a4 4 0 0 1-4 4H33.83a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4z"
+                  />
+                  <path
+                    className="ant-empty-img-3"
+                    d="M42.678 9.953h50.237a2 2 0 0 1 2 2V36.91a2 2 0 0 1-2 2H42.678a2 2 0 0 1-2-2V11.953a2 2 0 0 1 2-2zM42.94 49.767h49.713a2.262 2.262 0 1 1 0 4.524H42.94a2.262 2.262 0 0 1 0-4.524zM42.94 61.53h49.713a2.262 2.262 0 1 1 0 4.525H42.94a2.262 2.262 0 0 1 0-4.525zM121.813 105.032c-.775 3.071-3.497 5.36-6.735 5.36H20.515c-3.238 0-5.96-2.29-6.734-5.36a7.309 7.309 0 0 1-.222-1.79V69.675h26.318c2.907 0 5.25 2.448 5.25 5.42v.04c0 2.971 2.37 5.37 5.277 5.37h34.785c2.907 0 5.277-2.421 5.277-5.393V75.1c0-2.972 2.343-5.426 5.25-5.426h26.318v33.569c0 .617-.077 1.216-.221 1.789z"
+                  />
+                </g>
+                <path
+                  className="ant-empty-img-3"
+                  d="M149.121 33.292l-6.83 2.65a1 1 0 0 1-1.317-1.23l1.937-6.207c-2.589-2.944-4.109-6.534-4.109-10.408C138.802 8.102 148.92 0 161.402 0 173.881 0 184 8.102 184 18.097c0 9.995-10.118 18.097-22.599 18.097-4.528 0-8.744-1.066-12.28-2.902z"
+                />
+                <g className="ant-empty-img-4" transform="translate(149.65 15.383)">
+                  <ellipse cx="20.654" cy="3.167" rx="2.849" ry="2.815" />
+                  <path d="M5.698 5.63H0L2.898.704zM9.259.704h4.985V5.63H9.259z" />
+                </g>
+              </g>
+            </svg>
+            <Box sx={{ mt: 1 }}>Nu exista date</Box>
+          </StyledGridOverlay>
+        );
+      }
 
-    const defaultProps = {
-        options: userRoles,
-        getOptionLabel: (option) => option.title
-    }
-
-
-
-    const cookies = new Cookies()
-    const TOKEN = cookies.get('s')
-    const ID = cookies.get('id')
-    const BASE_URL = hostURL()
-    const GET_ALL_DATA = BASE_URL + API_URL.API_GET_FACULTIES
-    const GET_DATA = BASE_URL + API_URL.API_GET_FACULTY
-    const ADD_DATA = BASE_URL + API_URL.API_ADD_FACULTY
-
-   React.useEffect(() => {
-        if(isRender) {
-            setAllFaculties({columns: DATATABLE.ADD_FACULTIES_TABLE_COLUMNS, rows: rowData})
+      const callbackGridDialog = async (type, dialogData) => {
+        console.log(dialogData, type)
+        if(type === 'close') {
+          setGridDialog({...gridDialog, open: false, dataToSend: {}})
         }
-        return () => {
-            setIsRender(false)
-        }
-    }, [allFaculties])
-
-    const callback = (data) => {
-        setSelectedFaculties(data)
-    }
-
-    const handleRefreshClick = (e) => {
-        setIsRender(true)
-        axios.get(GET_DATA, {headers: {"Authorization" : `Bearer ${TOKEN}`}, params: { id: ID}})
-        .then((res) => {
-            setAllFaculties(res.data)
-            setIsRender(false)
-        })
-        .catch((res) => {
-            setAllFaculties(res.data)
-            setIsRender(false)
-        })
-    }
-
-    const handleClickOpenAddFaculty = (e) => {
-        e.preventDefault()
-        setOpenDialog(true)
-    }
-
-    const handleClickCloseAddUser = (e) => {
-        e.preventDefault()
-        setOpenDialog(false)
-    }
-
-    const handleManualAddClick = (e) => {
-        e.preventDefault()
-        if(isRender) rows = []
-        
-        jsonFacultyData.id = rows.length+1
-        const newRow = JSON.parse(JSON.stringify(jsonFacultyData))
-        rows = [...rows, newRow]
-        setAllFaculties({columns: DATATABLE.ADD_FACULTIES_TABLE_COLUMNS, rows: rows})
-        setOpenDialog(false)   
-    }
-
-    const handleUploadExcel = (e) => {
-        e.preventDefault()
-        if(isRender) rows = []
-        if(e.target.files) {
-            const reader = new FileReader()
-            reader.onload = (e) => {
-                let tempJson = utils.xlsxToJSON(e)     
-                for(let i=0;i<tempJson.length; i++){   
-                    let tempFacultyData = { id: 0, name: "", address: "", phoneNumber: "", shortName: "" }                                    
-                    for(const key in tempJson[i]) {
-                        tempFacultyData[key] = tempJson[i][key]
+        //Check the validations
+        if(type === 'accepted') {
+          let ok = true
+            if(
+              dialogData.dataToSend.hasOwnProperty('name') &&
+              dialogData.dataToSend.hasOwnProperty('address') &&
+              dialogData.dataToSend.hasOwnProperty('phoneNumber') &&
+              dialogData.dataToSend.hasOwnProperty('shortName')
+            ) {
+              if(!utils.validations.validateStringLength(dialogData.dataToSend.name)) {
+                  if(!utils.validations.validateStringLength(dialogData.dataToSend.address)) {
+                    if(utils.validations.validatePhoneNumber(dialogData.dataToSend.phoneNumber)) {
+                        if(!utils.validations.validateStringLength(dialogData.dataToSend.shortName)) {
+                            let row = {id: gridRows.length+1, ...dialogData.dataToSend}
+                            setGridRows([...gridRows, row])
+                        } else {
+                            ok = false
+                            setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.admin.addFaculties.shortNameInvalid})
+                        }
+                    } else {
+                        ok = false
+                        setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.admin.addFaculties.phoneNumber})
                     }
-                    tempFacultyData.id = rows.length+1
-                    const newRow = JSON.parse(JSON.stringify(tempFacultyData))
-                    rows = [...rows, newRow]
+                } else {
+                    ok = false
+                    setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.admin.addFaculties.addressInvalid})
                 }
-                setAllFaculties({columns: DATATABLE.ADD_FACULTIES_TABLE_COLUMNS, rows: rows})
+              } else {
+                ok = false
+                setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.admin.addFaculties.nameInvalid})
+              }
             }
-            reader.readAsArrayBuffer(e.target.files[0])
+    
+          if(ok) {
+            setGridDialog({...gridDialog, open: false, dataToSend: {}})
+          }
         }
+      }
+
+
+    const handleClick = async (event, index) => {
+      event.preventDefault()
+      console.log(index)
+      const button = data.page.buttons[index]
+
+      if(button.action === 'dialog') {
+        const dialogData = await utils.app.getDialogData(button.type)
+        setGridDialog(dialogData.data)
+      }
+     console.log(button)
+      if(button.type === 'register-faculties')  {
+          if(gridRows.length > 0) {
+            let dataToSubmit = []
+              gridRows.forEach(element => {
+                dataToSubmit.push({
+                    name: element.name,
+                    address: element.address,
+                    phoneNumber: element.phoneNumber,
+                    shortName: element.shortName
+                })
+              });
+
+            console.log(dataToSubmit)
+            const sendData = await utils.app.sendDataByType(button.type, dataToSubmit)
+            if(!sendData.status) {
+              setGridAlert({isError: true, severity: 'error', textError: stringConstants.error.secretaries.addData.notAdd})    
+            } else {
+              setGridAlert({isError: true, severity: 'success', textError: stringConstants.error.secretaries.addData.successAll}) 
+              setGridRows([])
+            } 
+            
+          }
+      }
+
     }
 
-    const handleClickRegisterFaculties = (e) => {
-        let pendingDelete = []
-        rows.forEach((item,i) => {
-            const facultyBody = {
-                name: item.name,
-                address: item.address,
-                phoneNumber: item.phoneNumber,
-                shortName: item.shortName
+    const handleUploadExcel = (event) => {
+      event.preventDefault()
+      if(event.target.files) {
+          const reader = new FileReader()
+          let tempRows = []
+          reader.onload = (e) => {
+              let excelData = utils.app.xlsxToJSON(e)
+              let numberOfRows = data.dataGrid.settings.rows.length
+              
+              for(let i = 0; i < excelData.length; i++) {
+                tempRows.push({id:numberOfRows+1, ...excelData[i]})
+                numberOfRows++
+              }
+              setGridRows([...gridRows, ...tempRows])
+          }
+          reader.readAsArrayBuffer(event.target.files[0])
+          
+      }
+    }
+    
+    React.useEffect(() => {
+      const getData = async (props) => {
+        if(props.data.hasOwnProperty('page')) {
+          setGridRows([...props.data.dataGrid.settings.rows])
+          setGridColumns([...props.data.dataGrid.settings.columns])
+          let settings = {}
+          Object.keys(props.data.dataGrid.settings).forEach(function(key){
+            if (props.data.dataGrid.settings[key] !== 'rows' || props.data.dataGrid.settings[key] !== 'columns' ) {
+              settings[key] = props.data.dataGrid.settings[key] 
             }
-            axios.post(ADD_DATA, facultyBody, {headers: {"Authorization" : `Bearer ${TOKEN}`}})
-            .then((results) => {
-                console.log(pendingDelete)
-                pendingDelete = [...pendingDelete, i]
-                
+          });
+            setData({
+              ...props.data,
+              page: props.data.page,
+              dataGrid: {
+                ...props.data.dataGrid,
+                isEditable: props.data.dataGrid.isEditable,
+                settings: settings,
+                selectedItems: []
+              }
             })
-            .catch((message) => {
-                console.log(message)
-            })
-        })
-        let tempRows = []
-        console.log(pendingDelete)
-        for(let j=0;j<pendingDelete.length;j++) {
-            rows.forEach((item, i) => {
-                if(!(i===pendingDelete[j])) {
-                    tempRows = [...tempRows,item]
-                }
-            })
+          setLoading(false)
         }
-        if(tempRows.length > 0) {
-            rows = [...tempRows]
-        }
-        if(rows.length === 0){
-            setAddFacultyAlert({open:true, severity: 'success', text: 'Facultatile au fost adaugate cu succes'})
-        } else {
-            setAddFacultyAlert({open:true, severity: 'error', text: 'Nu toate facultatile au fost inregistrate!'})
-        }
-        setAllFaculties({columns: DATATABLE.ADD_FACULTIES_TABLE_COLUMNS, rows: rows})
+  
+      }
+
+      getData(props)
+    }, [props])
+
+    const generateIcon = (iconType) => {
+      switch(iconType) {
+        case 'file-upload':
+          return <FileUpload/>
+        case 'add':
+          return <Add/>
+        case 'group-add':
+          return <GroupAdd/>
+        case 'add-business':
+            return <AddBusiness/>
+      }
     }
 
-    const handleCloseSnackbar = (e) => {
-        setAddFacultyAlert({open: false, severity: "success", text: ''})
+    const generateButtons = (data) => {
+      let contents = []
+      
+      for(let index=0; index<data.page.buttons.length; index++) {
+        let content
+          if(data.page.buttons[index].isUploadButton) {
+            content = (<label key={`button-${index}`} htmlFor="contained-button-file">
+              <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
+                <Button variant="text" disabled = {data.page.buttons[index].isDisabled} component="span">
+                  {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+                </Button>
+            </label>)
+          } else {
+            content = (
+              <Button key={`button-${index}`} variant='text' disabled = {data.page.buttons[index].isDisabled} component='span' onClick={(event) => {
+                event.preventDefault()
+                handleClick(event, index)}}>
+                {generateIcon(data.page.buttons[index].icon)} {data.page.buttons[index].text}
+              </Button>
+            )
+          }
+        contents.push(content)
+      }
+
+      return (
+        <Box sx = {{pb:'1%', pt:'1%'}}>
+          {contents}
+        </Box>
+      )
     }
 
-    const textFieldHandler = (e) => {
-        switch (e.target.labels[0].firstChild.data)
-        {
-            case "Nume Facultate":
-                if(setupUtil.validateFacultyField(e.target.value)) {
-                    setIsNameInvalid({state: false, text: ""})
-                    jsonFacultyData.name = e.target.value
-                } else {
-                    setIsNameInvalid({state: true, text: "Numele facultatii trebuie sa contina minim 2 caractere"})
-                }
-                break
-            case "Adresa Facultate":
-                if(setupUtil.validateFacultyField(e.target.value)){
-                    setIsAddressInvalid({state: false, text: ""})
-                    jsonFacultyData.address = e.target.value
-                } else {
-                    setIsAddressInvalid({state: true, text: "Adresa facultatii trebuie sa contina minim 2 caractere"})
-                }
-                break
-            case "Telefon":
-                if(setupUtil.validatePhoneNumber(e.target.value)) {
-                    setIsPhoneInvalid({state: false, text: ""})
-                    jsonFacultyData.phoneNumber = e.target.value
-                } else {
-                    setIsPhoneInvalid({state: true, text: "Numarul de telefon introdus este invalid"})
-                }
-                break
-            case "Cod Facultate":
-                if(setupUtil.validateFacultyField(e.target.value)) {
-                    setIsShortNameInvalid({state: false, text: ""})
-                    jsonFacultyData.shortName = e.target.value
-                } else {
-                    setIsShortNameInvalid({state: true, text: "Codul facultatii trebuie sa contina minim 2 caractere"})
-                }
-                break                
-        }
-    }
-
+    const handleCloseGridAlert = (event, reason) => {
+      if (reason === 'clickaway') {
+        return;
+      }
+  
+      setGridAlert(previous => ({...previous, isError: false, textError: ""}))
+  }
 
 
     return (
-        <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={2} style={{height: '100%'}}>
-            <Box gridColumn="span 12">
-                <Typography variant='h4'>
-                    Adaugare facultate
-                </Typography>
+      loading ? (
+        <Backdrop open={loading} sx={{position:'absolute', zIndex:1, alignItems:'center'}}>
+          <CircularProgress sx={{color:'white'}} />
+        </Backdrop>
+      ) : (
+        <Box sx={{p : 3, height: '100vh'}}>
+          <Box>
+            <Box>
+              <Typography variant = 'h4'>
+                {data.page.title}
+              </Typography>
             </Box>
-            <Box gridColumn="span 12" minHeight={500} >
-                <label htmlFor="contained-button-file">
-                    <Input style={{display: 'none'}} accept="image/*" id="contained-button-file" type="file" onChange={handleUploadExcel}/>
-                    <Button variant="text" style={isAddedFile === false ? {display: 'inline-flex'} : {display: 'none'}} component="span">
-                        <FileUpload />
-                        Incarca fisier Excel
-                    </Button>
-                </label>
-                <Button variant="text" onClick={handleClickOpenAddFaculty}>
-                    <Add/>
-                    Adauga un noua facultate
-                </Button> 
-                <Button variant="text" onClick={handleClickRegisterFaculties}>
-                    <GroupAdd/>
-                    Inregistreaza facultatile
-                </Button>
-                <div style={{ display: 'flex', height: '100%'}}>
-                    <div style={{ flexGrow: 1 }}>
-                        <DataTable data = {allFaculties} isSelectable = {false} callback={callback}/>
-                    </div>
-                </div>
-            </Box>
-            
-            <Dialog open={openDialog} onClose={handleClickCloseAddUser}>
-                <DialogTitle>
-                    Adauga o noua facultate
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Pentru a adauga o noua facultate trebuie completate informatiile de mai jos
-                    </DialogContentText>
-                    <Divider sx={{mt:1, mb:1}}/>
-                    <DialogContentText sx={{mt:1, mb: 1, color: '#1976d2'}}>
-                        Date facultate
-                    </DialogContentText>
-                    <TextField error = {isNameInvalid.state} helperText = {isNameInvalid.text} fullWidth required variant='standard' id="outlined-required1" label="Nume Facultate" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isAddressInvalid.state} helperText = {isAddressInvalid.text} fullWidth variant='standard' id="outlined-required2" label="Adresa Facultate" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isPhoneInvalid.state} helperText = {isPhoneInvalid.text} fullWidth variant='standard' required id="outlined-required3" label="Telefon" margin="normal" onChange={textFieldHandler}/>
-                    <TextField error = {isShortNameInvalid.state} helperText = {isShortNameInvalid.text} fullWidth variant='standard' required id="outlined-required4" label="Cod Facultate" margin="normal" onChange={textFieldHandler}/>
-                </DialogContent>
-                <DialogActions>
-                    <Button variant = "text" onClick={handleClickCloseAddUser}>Anuleaza</Button>
-                    <Button variant = "text" onClick={handleManualAddClick.bind(this)}>Adauga</Button> 
-                </DialogActions>
-            </Dialog>
+            {generateButtons(data)}
 
-            <Snackbar open={addFacultyAlert.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-                    <Alert onClose={handleCloseSnackbar} severity={addFacultyAlert.severity} sx={{ width: '100%' }}>
-                        {addFacultyAlert.text}
-                    </Alert>
-            </Snackbar>
+              <div style={{ display: 'flex', height:'80vh'}}>
+                <div style={{ flexGrow: 1 }}>
+                  {data.dataGrid.settings.show ? (
+                    <DataGrid
+                      experimentalFeatures={{ newEditingApi: true }}
+                      {...data.dataGrid.settings}
+                      components = {{
+                        Toolbar: GridToolbar,
+                        LoadingOverlay: LinearProgress,
+                        NoRowsOverlay: NoDataOverlay 
+                      }}
+                      rows = {gridRows}
+                      columns = {gridColumns}
+                      onSelectionModelChange={(ids) => {
+                          const selectedIDs = new Set(ids)
+                          const selectedRowData = dataRows.filter((row) => selectedIDs.has(row.id))
+                          if(!(selectedRowData === undefined) || (selectedRowData.length > 0)) {
+                              console.log(selectedRowData)
+                          }
+                      }}
+                      selectionModel = {data.dataGrid.selectedItems}
+                    />
+                  ) : (
+                    <Box></Box>
+                  )}
+                </div>
+              </div>
+          </Box>
+          <DialogForm data = {gridDialog} callback = {callbackGridDialog} />
+          <Snackbar open={gridAlert.isError} autoHideDuration={6000} onClose={handleCloseGridAlert}>
+            <Alert onClose={handleCloseGridAlert} severity={gridAlert.severity} sx={{ width: '100%' }}>
+              {gridAlert.textError}
+            </Alert>
+          </Snackbar>
         </Box>
+      )     
     )
 }

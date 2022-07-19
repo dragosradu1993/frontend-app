@@ -5,20 +5,24 @@ export default function Tile(props) {
     const [tileData, setTileData] = React.useState(props.data)
     const [isRender, setIsRender] = React.useState(true)
     const [loading, setLoading] = React.useState(true)
+    const [cardColor, setCardColor] = React.useState('white')
 
     React.useEffect(() => {
         if(isRender && props.hasOwnProperty('data')) {
             setTileData(props.data)
+            setCardColor(props.data.cardColor)
             setLoading(false)
         }
-
-        return () => {
-            setIsRender(false)
-        }
     }, [props])
+
+    const handleClickDetails = (e) => {
+        e.preventDefault()
+        props.callback(tileData.title)
+    }
+
     return(
         <React.Fragment>
-            <Card sx={{bgcolor: '#1976d2'}}>
+            <Card sx={{bgcolor: cardColor}}>
                 { loading ? 
                 (
                     <Box sx={{ p:'10%' }}>
@@ -37,7 +41,7 @@ export default function Tile(props) {
                             </Typography>
                         </CardContent>
                         <CardActions>
-                            <Button sx={{color:'white'}} size="small">Vezi detalii</Button>
+                            <Button sx={{color:'#1a1a1a'}} size="small" onClick={handleClickDetails}>Vezi detalii</Button>
                         </CardActions>
                     </Box>
                 )}

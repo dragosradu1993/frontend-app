@@ -44,14 +44,15 @@ function App() {
     })
   }, [])
 
+
   return (
-          <Routes>
-            <Route path = "/" element={<LandingLoading/>}/>
-            <Route path = "/login" element={ <Login/>}/>
-            <Route path = "/setup" element={ <Setup/>}/>
-            <Route path = '/dashboard' element={ <Dashboard/> }/>
-            
-          </Routes>
+    <Routes>
+        <Route path = '/' element={<LandingLoading/>}/>
+        <Route path = '/login' element={ <Login/>}/>
+        <Route path = '/setup' element={ <Setup/>}/>
+        <Route path = '/dashboard' element={ <Dashboard/> }/>
+    </Routes>
+
   );
 }
 

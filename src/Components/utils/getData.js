@@ -33,6 +33,11 @@ const getIDFromToken = function(token) {
     return decode.user.id
 }
 
+const getDataFromToken = function(token) {
+    const decode = jwtDecode(token)
+    return decode
+}
+
 
 const getImagePath = function(imageURL) {
     let imagePath = imageURL.substring(1)
@@ -42,7 +47,7 @@ const getImagePath = function(imageURL) {
 
 
 export default {
-
+    getDataFromToken,
     getAppIsSet,
     getAppInfoData,
     getImagePath,

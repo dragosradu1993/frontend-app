@@ -1,5 +1,4 @@
-import { Toolbar, Button,  AppBar, IconButton, Typography, Badge, Box, Menu, Tooltip, MenuItem, Avatar, Dialog, DialogActions } from '@mui/material';
-import { Notifications } from '@mui/icons-material';
+import { Toolbar, Button,  AppBar, IconButton, Typography, Box, Menu, Tooltip, MenuItem, Avatar, Dialog, DialogActions } from '@mui/material';
 import * as React from 'react';
 import utils from '../utils/utils';
 import Cookies from 'universal-cookie';
@@ -13,17 +12,14 @@ import ProfileContent from './ProfileContent';
 
 export default function MainAppBar(props) {
     const [appBarData, setAppBarData] = React.useState({appName: '', width: 200})
-    const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
     const [avatar, setAvatar] = React.useState({})
-    const [badgeNotificationsNumber, setBadgeNotificationsNumber] = React.useState(0)
     const [isRender, setIsRender] = React.useState(true)
     const [openProfile, setOpenProfile] = React.useState(false)
     const [profileData, setProfileData] = React.useState({})
     const navigate = useNavigate()
     const cookies = new Cookies()
     const BASE_URL = hostURL()
-    const GET_USER_PROFILE = BASE_URL + API_URL.API_GET_PROFILE_ENDPOINT
 
     React.useEffect(() => {
         if(isRender && props.width && props.appName){
@@ -38,22 +34,17 @@ export default function MainAppBar(props) {
     }, [props.width, props.appName, appBarData, avatar])
 
 
-    const handleOpenNavMenu = (event) => {
-        setAnchorElNav(event.currentTarget)
-    };
     const handleOpenUserMenu = (event) => {
+        event.preventDefault()
         setAnchorElUser(event.currentTarget)
     };
 
-    const handleCloseNavMenu = () => {
-        setAnchorElNav(null);
-    };
 
-    const handleCloseUserMenu = (e) => {
+    const handleCloseUserMenu = React.useCallback((event) => {
+        event.preventDefault()
         setAnchorElUser(null);
-        switch (e.target.innerHTML) {
+        switch (event.target.innerHTML) {
             case "Profil":
-                console.log("PROFIL")
                 
                 const GET_PROFILE_URL = BASE_URL + API_URL.API_GET_PROFILE_ENDPOINT + cookies.get('id')
                 axios.get(GET_PROFILE_URL, {headers: {"Authorization" : `Bearer ${cookies.get('s')}`}})
@@ -62,13 +53,12 @@ export default function MainAppBar(props) {
                     setOpenProfile(true)
                 })
                 break
-            case "Logout":
-                console.log("LOGOUT")
+            case "Deconectare":
                 cookies.remove('s')
                 navigate('/login')
                 break
         }
-    };
+    }, [profileData, openProfile])
 
     const primary = '#ffffff'
 
@@ -78,18 +68,13 @@ export default function MainAppBar(props) {
 
 
     return (
-        <AppBar elevation={0} position="fixed" sx={{width: { sm: `calc(100% - ${appBarData.width}px)` }, ml: { sm: `${appBarData.width}px` }, bgcolor: primary}}>
+        <AppBar elevation={0} position="fixed" sx={{width: { sm: `calc(100% - ${appBarData.width}px)` }, ml: { sm: `${appBarData.width}px` }, bgcolor: primary, boxShadow: 2}}>
             <Toolbar>
                 <Typography variant="h6" noWrap component="div" color='black'>
                     {appBarData.appName}
                 </Typography>
                 <Box sx={{ml:'auto', mr:'10px'}} justifyContent="center" alignItems="center">
-                    <IconButton sx = {{mr:'10px'}} fontSize='large' aria-label='show notifications' color='primary'>
-                        <Badge badgeContent={0} showZero color='error'>
-                            <Notifications/>
-                        </Badge>
-                    </IconButton> 
-                    <Tooltip title = 'Setari cont'>
+                    <Tooltip title = 'Setări cont'>
                         <IconButton onClick={handleOpenUserMenu} sx={{p:0}}>
                             <Avatar {...avatar}/>
                         </IconButton>
