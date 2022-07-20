@@ -68,3 +68,8 @@ export const API_GET_NO_PROJECT_STUDENTS = `/api-${process.env.REACT_APP_BASE_UR
 //Admin
 
 export const API_GET_ADMIN_DASHBOARD_DATA = `/api-${process.env.REACT_APP_BASE_URL}/users/get/admin/dashboard-data`
+
+//Key
+
+
+export const API_KEY_CHECK = `/api-${process.env.REACT_APP_BASE_URL}/app/check-key`

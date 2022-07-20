@@ -287,6 +287,10 @@ export default function Dashboard() {
         }
       }
 
+      if(dialog.location === '/add-announce') {
+        console.log(dialog)
+      }
+
       if(ok) {
         setDialog({...dialog, open: false, backdrop: false, dataToSend: {}})
         setData(state => ({...state, refreshData: true}))

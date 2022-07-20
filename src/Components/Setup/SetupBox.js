@@ -12,6 +12,8 @@ import setupUtil from './utils/setupUtil';
 import axios from 'axios';
 import hostURL from '../utils/constants/hostURL';
 import { useNavigate } from 'react-router-dom';
+import { TextField, Stack, Typography } from '@mui/material';
+import utils from '../utils/utils';
 
 const steps = ['Creare cont admin', 'Adaugare informatii aplicatie', 'Adaugare informatii facultate', 'Sumar']
 const jsonDataToSend = {}
@@ -24,6 +26,8 @@ export default function SetupBox() {
     const [adminData, setAdminData] = React.useState({})
     const [appData, setAppData] = React.useState({})
     const [facultyData, setFacultyData] = React.useState({})
+    const [showKey, setShowKey] = React.useState(true)
+    const [key, setKey] = React.useState()
 
     const BASE_URL = hostURL()
 
@@ -115,41 +119,70 @@ export default function SetupBox() {
         }
     }
 
+    const handleKeyChange = (event) => {
+        event.preventDefault()
+        setKey(event.target.value)
+    }
+
+    const handleClickKey = async (event) => {
+        event.preventDefault()
+        if(!key) {
+            setKey('')
+        }
+        const initialKey = await utils.app.sendInitialKey(key)
+            setShowKey(!initialKey.keyState)
+    }
+
     return (
         <Box>
             <Box>
-                <Box sx={{ width: '100%'}}>
-                    <Stepper sx={{p: 2}} activeStep={activeStep}>
-                        {steps.map((label, index) => {
-                        const stepProps = {};
-                        const labelProps = {};
-                        if (isStepSkipped(index)) {
-                            stepProps.completed = false;
-                        }
-                        return (
-                            <Step key={label} {...stepProps}>
-                                <StepLabel {...labelProps}>{label}</StepLabel>
-                            </Step>
-                        );
-                        })}
-                    </Stepper>
-                    {activeStep === steps.length ? (
-                        <React.Fragment>
-                            <Box sx={{ mt: 2, mb: 1 }}>
-                                
-                            </Box>
-                        </React.Fragment>
-                    ) : (
-                        <React.Fragment>
-                            {renderSwitch(activeStep)}
-                            <Box sx={{ display: 'flex', pt: 10, flexWrap: 'wrap', alignContent: 'flex-end'}}>
-                                <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={activeStep === 0 ? { mr: 1, display: 'none' } : { mr: 1, display: 'inline-flex' }}>Inapoi</Button>
-                                <Box sx={{ flex: '1 1 auto' }} />
-                                <Button onClick={handleNext}>{activeStep === steps.length - 1 ? 'Gata' : 'Inainte'}</Button>
-                            </Box>
-                        </React.Fragment>
+                {showKey ? (
+                    <Box sx={{ width: '100%'}}>
+                        <Stack direction='column' alignItems='center' justifyContent='center' sx={{m:'3%'}}>
+                            <Typography variant='body1'>
+                                Cheia de acces
+                            </Typography>
+                            <TextField variant='standard' onChange={handleKeyChange}/>
+                            <Button variant = 'text' onClick = {handleClickKey}>
+                                OK
+                            </Button>
+                        </Stack>
+                    </Box>
+                ) : (
+                    <Box sx={{ width: '100%'}}>
+                        <Stepper sx={{p: 2}} activeStep={activeStep}>
+                            {steps.map((label, index) => {
+                                const stepProps = {};
+                                const labelProps = {};
+                                if (isStepSkipped(index)) {
+                                    stepProps.completed = false;
+                                }
+                                return (
+                                    <Step key={label} {...stepProps}>
+                                        <StepLabel {...labelProps}>{label}</StepLabel>
+                                    </Step>
+                                );
+                            })}
+                        </Stepper>
+                        {activeStep === steps.length ? (
+                            <React.Fragment>
+                                <Box sx={{ mt: 2, mb: 1 }}>
+                                                    
+                                </Box>
+                            </React.Fragment>
+                        ) : (
+                            <React.Fragment>
+                                {renderSwitch(activeStep)}
+                                <Box sx={{ display: 'flex', pt: 10, flexWrap: 'wrap', alignContent: 'flex-end'}}>
+                                    <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={activeStep === 0 ? { mr: 1, display: 'none' } : { mr: 1, display: 'inline-flex' }}>Inapoi</Button>
+                                    <Box sx={{ flex: '1 1 auto' }} />
+                                    <Button onClick={handleNext}>{activeStep === steps.length - 1 ? 'Gata' : 'Inainte'}</Button>
+                                </Box>
+                            </React.Fragment>
+                            )}
+                        </Box>
                     )}
-                </Box>
+
             </Box>
         </Box>
     );

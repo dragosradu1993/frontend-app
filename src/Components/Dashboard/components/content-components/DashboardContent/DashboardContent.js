@@ -724,7 +724,7 @@ export default function DashboardContent(props) {
                                         </Button>
                                 </Stack>
                             </Paper>
-                            <Paper 
+                            {/*<Paper 
                                 elevation={6}
                                 sx={{mb:'2%', ml:'2%', mr:'2%', bgcolor: colors.bgColorAnnounce, color: colors.textColorAnnounce}}
                             >
@@ -735,7 +735,7 @@ export default function DashboardContent(props) {
                                     
                                         {UTILS.generateDashboardMessages(data.views[data.viewIndex].messages.notRead)}
                                 </Stack>
-                            </Paper>
+                        </Paper>*/}
                             <Stack direction= 'row'  spacing={{ xs: 1, sm: 1, md: 2 }} justifyContent='space-between' alignItems='stretch'>
                                 <Paper 
                                     elevation={6}
@@ -1000,7 +1000,7 @@ export default function DashboardContent(props) {
                                         </Button>
                                 </Stack>
                             </Paper>
-                            <Paper 
+                            {/*<Paper 
                                 elevation={6}
                                 sx={{mb:'2%', ml:'2%', mr:'2%', bgcolor: data.tabs[data.tabIndex].views[data.viewIndex].dateLimit.bgColorAnnounce, color: data.tabs[data.tabIndex].views[data.viewIndex].dateLimit.textColorAnnounce}}
                             >
@@ -1012,7 +1012,7 @@ export default function DashboardContent(props) {
                                         Lorem ipsum....
                                     </Typography>
                                 </Stack>
-                            </Paper>
+                            </Paper>*/}
                             <Stack direction={{ xs: 'column', sm: 'column', md:'row' }} justifyContent = 'stretch' spacing={{ xs: 1, sm: 2, md: 2}} sx ={{ mb:'2%', ml:'2%', mr:'2%', width: 1}}>
                                 <Stack direction='column' spacing={{ xs: 1, sm: 1, md: 1 }} sx={{width: { xs: 1, sm: 1, md: 1/2}}}>
                                         <Paper elevation={6} sx={{bgcolor: data.tabs[data.tabIndex].views[data.viewIndex].dateLimit.bgcolor, color: data.tabs[data.tabIndex].views[data.viewIndex].dateLimit.color}}>

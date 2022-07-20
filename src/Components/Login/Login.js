@@ -191,16 +191,16 @@ export default function Login() {
                     <Grid item xs="auto">
                         <Paper elevation={3}>
                             <Box sx={{p: 4, display: 'grid', gridAutoFlow: 'row'}}>
-                                <Typography>Va rugam sa introduceti datele dumneavoastra pentru autentificare</Typography>
+                                <Typography>Vă rugăm să introduceți datele dumneavoastră pentru autentificare</Typography>
                                 <Divider variant="middle" />
                                 <TextField fullWidth id="outlined-required3" label="Email" margin="normal" onChange={textFieldHandler}/>
                                 <TextField fullWidth id="outlined-password-input" label="Parola" type="password" autoComplete="current-password" margin="normal" onChange={textFieldHandler}/>
-                                <Button variant="contained" onClick={handleLogin}>Login</Button>
+                                <Button variant="contained" onClick={handleLogin}>Autentificare</Button>
                             </Box>
                         </Paper>
                     </Grid>
                     <Grid item xs="auto">
-                        <Button disabled={isEnabledReset} onClick={handleResetPassword}>Reseteaza parola</Button>
+                        <Button onClick={handleResetPassword}>Resetează parola</Button>
                     </Grid>
                     <Backdrop
                         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}

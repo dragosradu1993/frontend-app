@@ -217,6 +217,24 @@ const utils = {
             return color;
         },
 
+        sendInitialKey: async (key) => {
+            return new Promise(async (resolve, reject) => {
+                await axios.post(BASE_URL + API_URL.API_KEY_CHECK, {key: key}, {headers: {'x-api-key': process.env.REACT_APP_API_KEY}})
+                    .then((results) => {
+                        resolve({
+                            keyState: true,
+                            data: results.data
+                        })
+                    })
+                    .catch((error) => {
+                        reject({
+                            keyState: false,
+                            message: error.response.data.message
+                        })
+                    })
+                })
+            },
+
         getDialogData: async (when, otherData) => {
             return new Promise(async (resolve, reject) => {
                 let params
